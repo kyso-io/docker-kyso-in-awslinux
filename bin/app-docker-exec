@@ -1,0 +1,51 @@
+#!/bin/sh
+# ----
+# File:        app-docker-exec
+# Description: Script to execute local applications or use them inside a
+#              dedicated docker-$app container.
+# Author:      Sergio Talens-Oliag <sto@kyso.io>
+# Copyright:   (c) 2022 Sergio Talens-Oliag <sto@kyso.io>
+# ----
+set -e
+# ---------
+# VARIABLES
+# ---------
+SCRIPT_NAME="app-docker-exec"
+# ----
+# MAIN
+# ----
+# Get the command name
+app="$(basename "$0")"
+# Check if it is the real script
+if [ "$app" = "$SCRIPT_NAME" ]; then
+  cat <<EOF
+Create a link to this file with the docker-\$app that you want to use, i.e:
+
+  for app in 'kyso' 'skopeo'; do
+     ln -sf $SCRIPT_NAME ~/bin/\$app
+  done"
+
+EOF
+  exit 1
+fi
+# If the application is installed in /usr/local/bin or /usr/bin use that
+for bindir in "/usr/local/bin" "/usr/bin"; do
+  if [ -x "$bindir/$app" ]; then
+    exec "$bindir/$app" "$@"
+  fi
+done
+# Get the docker script name
+docker_script="$HOME/bin/docker-$app"
+# If the application is not installed use the container
+if [ -x "$docker_script" ]; then
+  if [ "$DOCKER_DEBUG" = "true" ]; then
+    /bin/sh -x "$docker_script" "$@"
+  else
+    exec "$docker_script" "$@"
+  fi
+else
+  echo "The script '$docker_script' is not available"
+  exit 1
+fi
+# ----
+# vim: ts=2:sw=2:et:ai:sts=2

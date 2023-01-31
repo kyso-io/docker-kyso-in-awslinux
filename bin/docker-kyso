@@ -1,0 +1,82 @@
+#!/bin/sh
+set -e
+
+# Default values (variables will be defined without the DEFAULT_ prefix)
+DEFAULT_IMAGE="kyso/kyso:latest"
+
+# Fixed values
+APP_CONF_NAME=".docker-kyso.conf"
+CONTAINER_NAME="kyso"
+
+# ---------
+# FUNCTIONS
+# ---------
+
+# Export variables from file adding prefix iff passed as second argument.
+# Function taken from '$KITT/lib/kitt/incl/common/io.sh'.
+export_env_file_vars() {
+  _file="$1"
+  _prefix="$2"
+  [ -f "$_file" ] || return 0
+  while read -r _line; do
+    _line="${_line%%#*}"                       # remove comments.
+    _line="${_line%"${_line##*[![:space:]]}"}" # remove trailing spaces.
+    _vname="${_line%=*}"                       # get variable name.
+    _value="${_line#*=}"                       # get variable value.
+    if [ "$_vname" ] && [ "$_vname" != "$_value" ]; then
+      # Remove single or double quotes iff they are present at the beggining and
+      # end of the value (only one or the other gets removed)
+      if [ "$_value" != "${_value#\'}" ]; then
+        _nvalue="${_value#\'}"
+        [ "$_value" = "${_nvalue%\'}" ] || _value="${_nvalue%\'}"
+      elif [ "$_value" != "${_value#\"}" ]; then
+        _nvalue="${_value#\"}"
+        [ "$_value" = "${_nvalue%\"}" ] || _value="${_nvalue%\"}"
+      fi
+      if [ "${_prefix}" ]; then
+        export "${_prefix}_${_vname}=$_value" # export variable
+      else
+        export "${_vname}=$_value" # export variable
+      fi
+    fi
+  done <<EOF
+$(cat "$_file")
+EOF
+}
+
+# Load app configuration variables.
+# Function taken from '$KITT/lib/kitt/incl/config.sh' replacing KITT_CONF by
+# DOCKER_KYSO_CONF
+config_app_load_variables() {
+  app_conf_name="${APP_CONF_NAME}"
+  file="${DOCKER_KYSO_CONF}"
+  if [ ! -f "$file" ]; then
+    file="$(pwd)/$app_conf_name"
+  fi
+  if [ ! -f "$file" ]; then
+    file="$HOME/$app_conf_name"
+  fi
+  export_env_file_vars "$file" "APP"
+  # Export the last file tried, note that if none exists it will be the
+  # APP_CONF_NAME on the user's HOME
+  export APP_CONF_PATH="$file"
+}
+
+# Export app variables
+docker_kitt_export_variables() {
+  config_app_load_variables "APP"
+  export IMAGE="${APP_KYSO_IMAGE:-$DEFAULT_IMAGE}"
+}
+
+# ----
+# MAIN
+# ----
+
+docker_kitt_export_variables
+
+docker run --rm -ti -v "$HOME:$HOME" -e "HOME=$HOME" -w "$(pwd)" \
+  --network host -u "$(id -u):$(id -g)" --name "$CONTAINER_NAME" "$IMAGE" \
+  kyso "$@"
+
+# ----
+# vim: ts=2:sw=2:et:ai:sts=2
