@@ -77,7 +77,7 @@ Uploading report '.'
 
 ## Permission denied message appears
 
-1. Check that your user has not permissions on docker (that's expected))
+1. Check that your user has not permissions on docker
 
 ```shell
 $ docker images
