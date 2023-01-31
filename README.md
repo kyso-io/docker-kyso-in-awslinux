@@ -1,6 +1,6 @@
 # Kyso-cli for awslinux
 
-This repository contains scripts to configure and use the kyso-cli on an awslinux SO with docker containers.
+This repository contains scripts to configure and use the kyso-cli on an awslinux SO with docker containers. Check out [the documentation](https://docs.kyso.io/posting-to-kyso/kyso-command-line-tool/installation#docker) for more details.
 
 # Usage
 
