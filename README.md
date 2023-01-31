@@ -72,3 +72,27 @@ $ docker-kyso push
 Uploading report '.'
 🎉🎉🎉 Report test xxxx to: https://kyso.io/xxx 🎉🎉🎉
 ```
+
+# Troubleshooting
+
+## Permission denied message appears
+
+1. Check that your user has not permissions on docker (that's expected))
+
+$ docker images
+
+```shell
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/images/json": dial unix /var/run/docker.sock: connect: permission denied
+```
+
+2. Execute the following command to grant permissions to your user (substitute "ec2-user" with the name of your user)
+
+```shell
+sudo setfacl --modify user:ec2-user:rw /var/run/docker.sock
+```
+
+3. Now your user will have access. Try again
+
+## Can't use docker-kyso outside the $HOME folder
+
+Per security, the `docker-kyso` command only has access to your user's directory ($HOME). That means, you can't use docker-kyso in folders like /tmp /usr, etc.
